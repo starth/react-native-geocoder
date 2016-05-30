@@ -48,19 +48,28 @@ public class RNGeocoderModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void geocodePosition(ReadableMap position, Promise promise) {
+    public void geocodePosition(final ReadableMap position, final Promise promise) {
         if (!geocoder.isPresent()) {
             promise.reject("NOT_AVAILABLE", "Geocoder not available for this platform");
             return;
         }
 
-        try {
-            List<Address> addresses = geocoder.getFromLocation(position.getDouble("lat"), position.getDouble("lng"), 20);
-            promise.resolve(transform(addresses));
-        }
-        catch (IOException e) {
-            promise.reject(e);
-        }
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    List<Address> addresses = geocoder.getFromLocation(
+                        position.getDouble("lat"),
+                        position.getDouble("lng"),
+                        20
+                    );
+
+                    promise.resolve(transform(addresses));
+                } catch (IOException e) {
+                    promise.reject(e);
+                }
+            }
+        }).start();
     }
 
     WritableArray transform(List<Address> addresses) {
